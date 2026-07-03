@@ -42,9 +42,11 @@ ListDetailRows(ctx, sessionID, dataTableID string) (rowKeys []string, err error)
 WriteField(ctx, sessionID, dataTableID, rowKey, fieldID string, typedValue []byte, writeGrant string) (seq int64, err error)
 WriteFields(ctx, sessionID string, fields []WriteFieldValue, writeGrant string) ([]WriteFieldResult, error)
 // WriteFieldValue{DataTableID, RowKey, FieldID, TypedValue []byte}
-// WriteFieldResult{DataTableID, RowKey, FieldID, AppliedRevision} —— 注意:无 Err 字段。
-// ⚠️ 批量写的单字段级失败(如混入 computed 被宿主拒写)当前不经线契约透出:该字段静默未写。
-// 需精确感知单字段错误 ⇒ 用单字段 WriteField(错误整体返回)。
+// WriteFieldResult{DataTableID, RowKey, FieldID, AppliedRevision, Err}
+// 单字段级失败经 results[i].Err 透出（MUST 逐条检查，R7）。语义按 AppliedRevision 区分:
+//   Err!="" && AppliedRevision==0 ⇒ 权威未写(如 computed 拒写)——该字段值没进 Mirror;
+//   Err!="" && AppliedRevision>0  ⇒ 权威已写、仅渲染通知失败——按成功处理(F9)。
+// 单字段 WriteField 的"权威已写仅渲染失败"= *plugin.RenderNotifyError(errors.As 判定,F9)。
 AppendDetailRow(ctx, sessionID, dataTableID, writeGrant string) (rowKey string, err error)
 RemoveDetailRow(ctx, sessionID, dataTableID, rowKey, writeGrant string) error
 ReorderDetailRows(ctx, sessionID, dataTableID string, orderedRowKeys []string, writeGrant string) error
@@ -66,10 +68,10 @@ SyncFields / ReportCalcState / BuildPayload / AllocateDetailRow / MarkRowDeleted
 
 | err 含义（匹配子串） | 处置 |
 |---|---|
-| `computed` （公式派生字段拒写） | 放弃写该字段；改写其输入字段 |
+| `computed` （公式派生字段拒写；批量时在 `results[i].Err` 且 AppliedRevision==0） | 放弃写该字段；改写其输入字段 |
 | `not writable`（view 会话） | 放弃全部写，动作按只读场景结束 |
 | `session not found`（会话失效/回收） | 终止动作，禁止重试 |
-| 渲染/通知类失败（写调用返回 err 但语义为 notify 失败） | **按写成功处理**，继续流程，可记 warn（F9） |
+| 渲染通知失败（单字段 = `*plugin.RenderNotifyError`，errors.As 判定；批量 = `results[i].Err`!="" 且 AppliedRevision>0） | **按写成功处理**，继续流程，可记 warn（F9） |
 | grant 校验失败 | 检查动作配置声明的目标表/字段与实际写目标是否一致 |
 
 ## RULES（硬约束）
@@ -80,7 +82,7 @@ SyncFields / ReportCalcState / BuildPayload / AllocateDetailRow / MarkRowDeleted
 - **R4 MUST** 需要权威值的读传 `waitSettled=true`；**MUST NOT** 以浏览器/editor 展示值为数据源。
 - **R5 MUST** typedValue 用 F6 线格式；数值 raw 放数值型，text 放渲染串。
 - **R6 SHOULD** 批量写用 `WriteFields`（一批=一个屏障窗口=一帧渲染）；**SHOULD NOT** 循环单调 `WriteField` 写大量字段。
-- **R7 MUST NOT** 向 computed/未声明字段写入并期待批量结果报错——批量单字段失败不透出（见 INTERFACE ⚠️）；只写动作配置声明的输入字段。
+- **R7 MUST** 逐条检查 `WriteFields` 返回的 `results[i].Err`：`Err!=""` 且 `AppliedRevision==0` ⇒ 该字段权威未写（如 computed 拒写），须按决策表处置；`AppliedRevision>0` ⇒ 仅渲染通知失败，按成功处理（F9）。仍 SHOULD 只写动作配置声明的输入字段（grant 本就只覆盖它们）。
 - **R8 MUST NOT** 因渲染通知失败回滚业务流程（F9）。
 - **R9 SHOULD** 追加明细行前复用既有空行（`ReadTable` 后检测全空行），避免凭空增行。
 - **R10 MUST**（仅编辑器类插件）实现来源过滤：宿主内部通道写入的 input 值不回投；开会话声明 computed 字段清单。
@@ -106,8 +108,14 @@ var fields []plugin.WriteFieldValue
 for _, rk := range rowKeys {
     fields = append(fields, plugin.WriteFieldValue{DataTableID: detailTbl, RowKey: rk, FieldID: dstField, TypedValue: derive(base)})
 }
-if _, err := mirror.WriteFields(ctx, sessionID, fields, grant); err != nil {
+results, err := mirror.WriteFields(ctx, sessionID, fields, grant)
+if err != nil {
     // 整批级错误（decode/grant/not-writable/session）按 ERROR DECISION TABLE 分支
+}
+for _, r := range results { // R7: 单字段级失败逐条检查
+    if r.Err != "" && r.AppliedRevision == 0 {
+        // 该字段权威未写（如 computed 拒写）——按决策表处置
+    }
 }
 ```
 
@@ -128,6 +136,6 @@ for len(rowKeys) < need {
 2. 每个写调用是否带了来自触发上下文的 grant？（R3）
 3. 需要计算后值的读是否 `waitSettled=true`？（R4）
 4. typedValue 是否 `{"raw","text"}` 双字段？（R5）
-5. 是否处理了 computed 拒写 / not-writable / session-not-found / notify-失败四种语义？（决策表）
+5. 是否处理了 computed 拒写 / not-writable / session-not-found / notify-失败四种语义？批量写是否逐条检查了 `results[i].Err`？（决策表/R7）
 6. 大批量写是否用了 `WriteFields` 分批？（R6）
 7. 主表 rowKey 是否写死 `"main:0"`、明细是否用 `ListDetailRows/AppendDetailRow` 返回的 rowKey？（F5）

@@ -101,7 +101,18 @@ _, err := mirror.WriteField(ctx, sessionID, tableID, "main:0", fieldID, tv, writ
 results, err := mirror.WriteFields(ctx, sessionID, fields, writeGrant)
 ```
 
-⚠️ **批量写的单字段失败当前不透出**（线契约限制，results 只含 AppliedRevision）：批里若混入公式字段等会被宿主单独拒写，但你收不到该字段的错误——它只是静默未写。**规避**：只写动作配置里声明的输入字段（grant 本就只覆盖它们）、不要往公式字段里塞值；需要精确感知单字段错误时改用单字段 `WriteField`（错误整体返回）。
+**批量写必须逐条检查 `results[i].Err`**：批里某个字段单独写失败（如混入公式字段被宿主拒写）不会让整批报错，而是透出在对应结果项上。两类语义按 `AppliedRevision` 区分：
+
+- `Err != ""` 且 `AppliedRevision == 0`：**该字段权威未写**（如 computed 拒写）——值没进账本，按 5.5 错误表处置；
+- `Err != ""` 且 `AppliedRevision > 0`：权威已写、仅渲染通知失败——按"写成功"继续（见 5.5 最后一条）。
+
+```go
+for _, r := range results {
+    if r.Err != "" && r.AppliedRevision == 0 {
+        // 该字段没写进去（比如它是公式字段）——处理或上报
+    }
+}
+```
 
 ### 5.4 明细行生命周期
 
@@ -117,10 +128,10 @@ err = mirror.ReorderDetailRows(ctx, sessionID, tableID, orderedKeys, writeGrant)
 
 | 你收到 | 含义 | 正确反应 |
 |---|---|---|
-| `computed_readonly` | 目标是公式派生字段 | 别写它——它的值由公式算，你写输入字段就好 |
+| `computed_readonly`（批量时在 `results[i].Err` 且 `AppliedRevision==0`） | 目标是公式派生字段 | 别写它——它的值由公式算，你写输入字段就好 |
 | `session not writable` | 查看态（view）会话 | 只读场景，放弃写 |
 | `mirror session not found` | 会话未开/已回收 | 会话失效，终止本次动作，勿重试 |
-| **写返回"渲染通知失败"类错误** | **值已进账本、会随保存落库**，只是界面暂时没刷 | 按"写成功"继续业务流程，最多记条 warn |
+| **渲染通知失败**（单字段 = `*plugin.RenderNotifyError`，用 `errors.As` 判定；批量 = `results[i].Err` 非空且 `AppliedRevision>0`） | **值已进账本、会随保存落库**，只是界面暂时没刷 | 按"写成功"继续业务流程，最多记条 warn |
 
 最后一条最容易犯错：**不要**因为渲染通知失败就回滚你的业务流程——权威已经写入了。
 
