@@ -170,6 +170,6 @@ func main() {
 
 | 插件 | 看什么 |
 |---|---|
-| **kimpo-extraction**（取数） | 动作插件全范式：`Host.Query()` 反向取数 + `Host.Mirror()` 写回 + 内存加工（左驱 join/填充策略）+ 分级日志 |
+| **kimpo-record-extraction**（取数） | 动作插件全范式：`Host.Query()` 反向取数 + `Host.Mirror()` 写回 + 内存加工（左驱 join/填充策略）+ 分级日志 |
 | **kimpo-record-create / update / delete**（三写） | 写动作范式：`Host.Record()` 记录写通道 + 表达式来源 + grant 消费 |
 | **kimpo-sheet**（电子表格编辑器） | 编辑器插件契约：多方向注册、北极星编辑器三契约、前端 Surface |
