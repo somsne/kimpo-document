@@ -20,7 +20,7 @@ Kimpo 是一个**电子表格式的低代码表单/报表平台**：管理员在
 | **数据表（DataTable）** | 模板落库的物理载体：**主表**（一单一行）+ **明细/扩展表**（一单多行，行键 `row:N`）。字段落物理列 |
 | **字段（Field）** | 业务数据最小单元，绑定到模板的单元格；分 **input**（用户/插件可写）与 **computed**（公式派生，只读） |
 | **动作（Action）** | 模板上编排的自动化流程（如"打开表单时取数"）：触发时机 + 条件 + 动作节点。**动作的执行体由插件贡献** |
-| **北极星（Polaris / Mirror）** | 填报态业务数据的**唯一权威**：会话级内存镜像，所有读写经宿主统一入口有序进行。插件读写表单数据的唯一通道 → 必读 [polaris/](#3-文档目录) |
+| **艾莉亚(Aria) / Mirror** | 填报态业务数据的**唯一权威**：会话级内存镜像，所有读写经宿主统一入口有序进行。插件读写表单数据的唯一通道 → 必读 [aria/](#3-文档目录) |
 | **表达式/查询** | 平台统一的取数语言：插件提交表达式模型（或 KimpoSQL 文本），宿主编译成 SQL 执行并返回行集——**插件永不碰裸 SQL** |
 
 ## 2. 插件体系
@@ -29,7 +29,7 @@ Kimpo 是一个**电子表格式的低代码表单/报表平台**：管理员在
 
 ```
 ┌──────────── Kimpo 宿主（单体服务）────────────┐
-│  模板/数据/权限/动作编排/北极星 Mirror/查询编译   │
+│  模板/数据/权限/动作编排/艾莉亚(Aria) Mirror/查询编译   │
 │     ▲ 反向通道(插件→宿主: Host 服务)            │
 │     │                    │ 正向通道(宿主→插件)   │
 └─────┼────────────────────┼────────────────────┘
@@ -49,7 +49,7 @@ Kimpo 是一个**电子表格式的低代码表单/报表平台**：管理员在
 | 类型 | runtime_kinds / directions | 干什么 | 参考实现 |
 |---|---|---|---|
 | **动作插件** | `action` / `biz` | 贡献动作执行体（取数、写数、通知…），被模板动作编排调用 | `kimpo-extraction`（取数）、`kimpo-record-create/update/delete`（三写） |
-| **编辑器插件** | `editor` | 提供一种表单设计/填报编辑器（渲染 + 公式内核），承担北极星编辑器契约 | `kimpo-sheet`（电子表格编辑器） |
+| **编辑器插件** | `editor` | 提供一种表单设计/填报编辑器（渲染 + 公式内核），承担艾莉亚(Aria)编辑器契约 | `kimpo-sheet`（电子表格编辑器） |
 | 复合插件 | 多方向组合 | 一个插件同时注册多个方向（editor+data+hooks） | — |
 
 ### 2.3 插件包（.kpp）
@@ -104,7 +104,7 @@ func main() {
 
 | 客户端 | 用途 |
 |---|---|
-| `Mirror()` | **填报态业务数据读写**（北极星，必读 polaris/ 文档） |
+| `Mirror()` | **填报态业务数据读写**（艾莉亚(Aria)，必读 aria/ 文档） |
 | `Query()` | 反向查询：提交表达式模型/KimpoSQL，宿主编译执行返回行集 |
 | `Record()` | 记录级写服务（写动作 insert/update/delete 专用通道） |
 | `Logger()` | **分级日志上报**（见规范 R5）；`Log()` 为底层通道 |
@@ -116,12 +116,12 @@ func main() {
 
 ## 3. 文档目录
 
-### polaris/ — 北极星（填报态业务数据层）★ 开发任何读写表单数据的插件前必读
+### aria/ — 艾莉亚(Aria)（填报态业务数据层）★ 开发任何读写表单数据的插件前必读
 
 | 文档 | 读者 | 内容 |
 |---|---|---|
-| [for-human-developers.md](polaris/for-human-developers.md) | 人类开发者 | 账本/前台/显示屏类比讲业务原理 → 写入生命周期 → 四项内建保障 → SDK 对接步骤 → 红线与 FAQ |
-| [for-llm-agents.md](polaris/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / INTERFACE / 错误决策表 / MUST-MUST NOT / 典型调用序列 / 自检清单。整体喂给你的 AI 即可 |
+| [for-human-developers.md](aria/for-human-developers.md) | 人类开发者 | 账本/前台/显示屏类比讲业务原理 → 写入生命周期 → 四项内建保障 → SDK 对接步骤 → 红线与 FAQ |
+| [for-llm-agents.md](aria/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / INTERFACE / 错误决策表 / MUST-MUST NOT / 典型调用序列 / 自检清单。整体喂给你的 AI 即可 |
 
 ### 规划中
 
@@ -130,7 +130,7 @@ func main() {
 ## 4. 快速开始（动作插件 10 分钟骨架）
 
 1. **脚手架**：用 `new-action-plugin` 脚手架生成骨架（manifest / main.go / Makefile / config.schema.json）。
-2. **实现动作**：在注册的动作 handler 里，从 `query_context` 取 `sheet_session_id`/`write_grant`，用 `host.Query()` 取数、`host.Mirror()` 写回（照抄 polaris 文档 S1-S3 序列）。
+2. **实现动作**：在注册的动作 handler 里，从 `query_context` 取 `sheet_session_id`/`write_grant`，用 `host.Query()` 取数、`host.Mirror()` 写回（照抄 aria 文档 S1-S3 序列）。
 3. **构建打包**：`make build` 产 `plugin.bin`（目标平台注意 GOOS/GOARCH，避免陈旧 x86_64 在 ARM 宿主上走翻译层）→ zip 成 `.kpp`。
 4. **安装验证**：`POST /api/v1/plugins/install` 上传 → 平台自动重启 sidecar → 在模板动作编排里挂上你的动作真机验证。日志看宿主控制台"插件日志"（你经 `host.Logger()` 上报的会集中展示）。
 
@@ -149,7 +149,7 @@ func main() {
 - **日志**：关键路径用 `host.Logger()` 分级上报（trace/debug/info/warn/error），错误必带上下文（sessionID/tableID/动作名）；`security`/`audit` 类恒上报不受级别过滤。实例日志级别由管理员在控制台配置（`config_json` 顶层保留字 `log_level`），你无需自己实现开关。
 - **多语言**：manifest 的 `name`/`description` 至少提供 `zh_CN` + `en_US`；所有面向最终用户的文案（错误提示、动作参数面板）须多语言，随插件自带 locale 资源。
 - **配置**：实例配置用 `config.schema.json` 声明结构（宿主安装时浅校验）；顶层键 `log_level` 为平台保留字，勿挪作他用。
-- **错误语义**：遵守 polaris 错误决策表——特别是"权威已写、仅渲染通知失败"必须按成功处理，勿回滚业务流程。
+- **错误语义**：遵守 aria 错误决策表——特别是"权威已写、仅渲染通知失败"必须按成功处理，勿回滚业务流程。
 - **性能**：批量写用 `WriteFields` 分批（一批=一个屏障窗口=一帧渲染）；读结算值才传 `waitSettled=true`；追加明细行前先复用空行。
 - **测试**：动作逻辑单测覆盖 + `go test -race` 干净；对宿主句柄做 fake（SDK 接口皆可 mock）；发布前真机走通"触发→写回→保存落库"全链。
 - **版本兼容**：`dependencies.platform` 如实声明最低平台版本；平台线协议（proto）演进后**须重新构建打包**，旧 `.kpp` 可能收不到新字段（如批量写的单字段错误透出）。
@@ -172,4 +172,4 @@ func main() {
 |---|---|
 | **kimpo-record-extraction**（取数） | 动作插件全范式：`Host.Query()` 反向取数 + `Host.Mirror()` 写回 + 内存加工（左驱 join/填充策略）+ 分级日志 |
 | **kimpo-record-create / update / delete**（三写） | 写动作范式：`Host.Record()` 记录写通道 + 表达式来源 + grant 消费 |
-| **kimpo-sheet**（电子表格编辑器） | 编辑器插件契约：多方向注册、北极星编辑器三契约、前端 Surface |
+| **kimpo-sheet**（电子表格编辑器） | 编辑器插件契约：多方向注册、艾莉亚(Aria)编辑器三契约、前端 Surface |

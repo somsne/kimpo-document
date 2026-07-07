@@ -1,4 +1,4 @@
-# POLARIS (北极星) — Kimpo 填报态业务数据层规范 · 大模型上下文版
+# ARIA (艾莉亚) — Kimpo 填报态业务数据层规范 · 大模型上下文版
 
 > AUDIENCE: LLM / AI coding agent generating or reviewing Kimpo plugin code.
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"读写填报表单业务数据"的插件代码前，先满足 SELF-CHECK。
@@ -7,7 +7,7 @@
 
 ## FACTS（事实，编号可引用）
 
-- **F1** 填报态（form-runtime）下，业务字段数据的唯一权威 = 宿主进程内的 **Mirror（北极星，formmirror）**。保存落库、动作取值、插件读取，均以 Mirror 为准。
+- **F1** 填报态（form-runtime）下，业务字段数据的唯一权威 = 宿主进程内的 **Mirror（艾莉亚(Aria)，formmirror）**。保存落库、动作取值、插件读取，均以 Mirror 为准。
 - **F2** 插件读写业务数据的**唯一通道** = SDK `plugin.Host.Mirror()`（gRPC，宿主网关校验 write-grant）。不存在合法的第二通道。
 - **F3** editor（表格编辑器 kimpo-sheet）不是权威：它是渲染视图 + 公式计算内核。它对 Mirror 无否决权；其用户编辑与公式结果同样经宿主有序通道汇入 Mirror。
 - **F4** 每个填报会话（sessionID）在宿主侧有独立的有序写队列 + 结算屏障：影响公式的写完成后，依赖它的后续业务读写被挡到公式结算（settle）才放行。跨会话互不影响。
