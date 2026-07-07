@@ -123,6 +123,13 @@ func main() {
 | [for-human-developers.md](aria/for-human-developers.md) | 人类开发者 | 账本/前台/显示屏类比讲业务原理 → 写入生命周期 → 四项内建保障 → SDK 对接步骤 → 红线与 FAQ |
 | [for-llm-agents.md](aria/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / INTERFACE / 错误决策表 / MUST-MUST NOT / 典型调用序列 / 自检清单。整体喂给你的 AI 即可 |
 
+### permission/ — 权限框架（代号 卡侬/Canon）★ 插件天然被管控，读它明白为什么"什么都不用做"
+
+| 文档 | 读者 | 内容 |
+|---|---|---|
+| [for-human-developers.md](permission/for-human-developers.md) | 人类开发者 | 一扇门/一张名单/一个算式讲原理 → 部门/用户/实例角色/应用角色四类主体关系 → 三层客体与载荷 → 授权与合并模式 → 插件零耦合契约与前端消费 → 新对象纳管三条路 → FAQ |
+| [for-llm-agents.md](permission/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / PLUGIN CONTRACT / ADMIN API / INTEGRATION / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
+
 ### 规划中
 
 反向查询与表达式模型专题 · 前端 Surface 对接专题 · 动作插件完整教程（脚手架到上架） · 编辑器插件契约专题
