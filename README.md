@@ -123,6 +123,20 @@ func main() {
 | [for-human-developers.md](aria/for-human-developers.md) | 人类开发者 | 账本/前台/显示屏类比讲业务原理 → 写入生命周期 → 四项内建保障 → SDK 对接步骤 → 红线与 FAQ |
 | [for-llm-agents.md](aria/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / INTERFACE / 错误决策表 / MUST-MUST NOT / 典型调用序列 / 自检清单。整体喂给你的 AI 即可 |
 
+### alice/ — 查询体系（代号 艾丽丝/Alice）★ 开发查询/取数类插件、或写筛选条件前必读
+
+| 文档 | 读者 | 内容 |
+|---|---|---|
+| [for-human-developers.md](alice/for-human-developers.md) | 人类开发者 | 翻译官类比讲原理 → 查询完整旅程 → 表达式模型契约 → 空值确定行为（F7 固定规则）→ SDK 对接范式 → 红线与 FAQ |
+| [for-llm-agents.md](alice/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / NULL-SEMANTICS / INTERFACE / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
+| [writing-conditions-for-non-sql-designers.md](alice/writing-conditions-for-non-sql-designers.md) | 零 SQL 基础的模板设计者 | 白话指南：一句话心法 + 七个照抄配方 + "没填会怎样"速查表 + 常见错误纠正 + 黄金三步 |
+
+### fields/ — 字段语义
+
+| 文档 | 读者 | 内容 |
+|---|---|---|
+| [empty-values-for-human-developers.md](fields/empty-values-for-human-developers.md) | 模板设计者 / 插件开发者 | 字段空值语义：哨兵值（0/""/1900）与诚实空值两种方案的区别、现方案优缺点、空值运算规则速查、老模式用户的习惯平移指南 |
+
 ### permission/ — 权限框架（代号 卡侬/Canon）★ 插件天然被管控，读它明白为什么"什么都不用做"
 
 | 文档 | 读者 | 内容 |
@@ -132,7 +146,7 @@ func main() {
 
 ### 规划中
 
-反向查询与表达式模型专题 · 前端 Surface 对接专题 · 动作插件完整教程（脚手架到上架） · 编辑器插件契约专题
+前端 Surface 对接专题 · 动作插件完整教程（脚手架到上架） · 编辑器插件契约专题
 
 ## 4. 快速开始（动作插件 10 分钟骨架）
 
