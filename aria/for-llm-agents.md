@@ -1,4 +1,4 @@
-# ARIA (艾莉亚) — Kimpo 填报态业务数据层规范 · 大模型上下文版
+# 表单数据权威层 Mirror（代号 艾莉亚/ARIA）— Kimpo 填报态业务数据层规范 · 大模型上下文版
 
 > AUDIENCE: LLM / AI coding agent generating or reviewing Kimpo plugin code.
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"读写填报表单业务数据"的插件代码前，先满足 SELF-CHECK。
