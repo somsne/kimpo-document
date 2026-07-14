@@ -146,6 +146,18 @@ func main() {
 | [for-human-developers.md](permission/for-human-developers.md) | 人类开发者 | 一扇门/一张名单/一个算式讲原理 → 部门/用户/实例角色/应用角色四类主体关系 → 三层客体与载荷 → 授权与合并模式 → 插件零耦合契约与前端消费 → 新对象纳管三条路 → FAQ |
 | [for-llm-agents.md](permission/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / PLUGIN CONTRACT / ADMIN API / INTEGRATION / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
 
+### directory-sync/ — 外部目录同步（面向平台管理员，非插件开发）
+
+> 读者是**平台管理员 / 实施人员**（不是插件开发者）：把钉钉/企业微信/飞书/LDAP 的部门与员工同步进 Kimpo，并打通 SSO 登录。全程走控制台界面、无需代码。
+
+| 文档 | 读者 | 内容 |
+|---|---|---|
+| [README.md](directory-sync/README.md) | 管理员新手 | 总览：目录同步能做什么 → 四种来源对比 → 认领/权威模式/工号语义/SSO 四概念 → 通用 6 步操作流程 → 密钥安全铁律 |
+| [dingtalk.md](directory-sync/dingtalk.md) | 管理员新手 | 钉钉手把手：建自建应用（ClientID/Secret 改名坑、测试应用与 IP 白名单）→ 开通讯录权限 → 控制台配置 → 测试/预览/认领/应用 → 常见问题 → 官方链接 |
+| [wecom.md](directory-sync/wecom.md) | 管理员新手 | 企业微信手把手：为什么用自建应用而非通讯录同步助手（IDs-only 坑）→ 可见范围/可信 IP → 控制台配置 → 官方链接 |
+| [feishu.md](directory-sync/feishu.md) | 管理员新手 | 飞书手把手：建自建应用取 App ID/Secret → 通讯录权限 + 数据范围 + 发布版本 → 控制台配置 → 官方链接 |
+| [ldap.md](directory-sync/ldap.md) | 管理员新手 | LDAP/AD 手把手：概念 → 每个连接字段讲解（AD/OpenLDAP 常见取值）→ 控制台配置 → **免注册公共测试服务器练手** → 常见问题 |
+
 ### 规划中
 
 前端 Surface 对接专题 · 动作插件完整教程（脚手架到上架） · 编辑器插件契约专题
