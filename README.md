@@ -136,8 +136,8 @@ func main() {
 | 文档 | 读者 | 内容 |
 |---|---|---|
 | [empty-values-for-human-developers.md](fields/empty-values-for-human-developers.md) | 模板设计者 / 插件开发者 | 字段空值语义：哨兵值（0/""/1900）与诚实空值两种方案的区别、现方案优缺点、空值运算规则速查、老模式用户的习惯平移指南 |
-| [timezone-for-human-developers.md](fields/timezone-for-human-developers.md) | 模板设计者 / 插件开发者 / 直接查库排障的人 | 日期时区语义：墙钟 vs 绝对时刻判断口诀、「自动匹配时区」字段开关、**数据库字面值与屏幕显示的三层差异表**、直接查库须知、插件"永不换算"守则、排障速查与 FAQ |
-| [timezone-for-llm-agents.md](fields/timezone-for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS(F1-F12) / 值形态规范 / 时区决策表 / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
+| [timezone-for-human-developers.md](fields/timezone-for-human-developers.md) | 模板设计者 / 插件开发者 / 直接查库排障的人 | 日期时区语义：墙钟 vs 绝对时刻判断口诀、「自动匹配时区」字段开关（默认关闭）、**数据库字面值与屏幕显示的三层差异表**、取数自动换算范围、直接查库须知、插件"永不换算"守则、**平台责任边界三特殊点**（日期成分统计按 UTC / 视图零换算 / 老文本通道遗留）、排障速查与 FAQ |
+| [timezone-for-llm-agents.md](fields/timezone-for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS(F1-F18，含取数换算已实施与设计者责任边界) / 值形态规范 / 时区决策表 / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
 
 ### permission/ — 权限框架（代号 卡侬/Canon）★ 插件天然被管控，读它明白为什么"什么都不用做"
 
