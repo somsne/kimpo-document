@@ -146,6 +146,14 @@ func main() {
 | [for-human-developers.md](permission/for-human-developers.md) | 人类开发者 | 一扇门/一张名单/一个算式讲原理 → 部门/用户/实例角色/应用角色四类主体关系 → 三层客体与载荷 → 授权与合并模式 → 插件零耦合契约与前端消费 → 新对象纳管三条路 → FAQ |
 | [for-llm-agents.md](permission/for-llm-agents.md) | AI 编程助手 | 结构化上下文版：FACTS / PLUGIN CONTRACT / ADMIN API / INTEGRATION / MUST-MUST NOT / 典型序列 / 自检清单。整体喂给你的 AI 即可 |
 
+### workflow/ — 流程引擎（代号 凯瑟琳/Katheryne）★ 画审批流、办审批、或与流程集成前必读
+
+| 文档 | 读者 | 内容 |
+|---|---|---|
+| [for-end-users.md](workflow/for-end-users.md) | 业务用户 / 流程设计者（零编程） | 把流程设计讲透：五分钟上手请假流 → 设计器操作手册 → **12 类节点逐个讲解** → 十种取人规则 → 多人模式与否决策略 → 智能去重/空兜底 → 超时提醒与升级 → 条件分支与结束语义 → 发布校验报错对照与版本规则 → 任务中心办理全集（认领/退回重提/撤回/转办/委托/加签/催办/批量）→ FAQ |
+| [for-human-developers.md](workflow/for-human-developers.md) | 人类开发者 | 引擎原理："什么都不亲自干"的插件架构 → 单方法 gRPC 信封与两个 REST 代理 → 十表数据模型 → 不可变版本与缓存 → Advance 推进内核与"等待态间单事务"铁律 → 操作框架三件套（身份/幂等/append-only 流水）→ 取人管线 → 提交链路/flow_status/编辑锁定三个衔接点 → 定时与事件 → 扩展点与红线 → FAQ |
+| [for-llm-agents.md](workflow/for-llm-agents.md) | AI 编程助手 | 结构化契约版：FACTS(F1-F18) / DATA MODEL / STATE ENUMS / OP+REST INTERFACE / NODE CONFIG SCHEMA / 取人管线 / MUST-MUST NOT / 典型序列 / 错误码表 / 自检清单。整体喂给你的 AI 即可 |
+
 ### directory-sync/ — 外部目录同步（面向平台管理员，非插件开发）
 
 > 读者是**平台管理员 / 实施人员**（不是插件开发者）：把钉钉/企业微信/飞书/LDAP 的部门与员工同步进 Kimpo，并打通 SSO 登录。全程走控制台界面、无需代码。
