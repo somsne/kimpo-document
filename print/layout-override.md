@@ -1,6 +1,6 @@
 # 版式覆盖 / 局部打印 · 打印回执（A 档纯声明式）
 
-> ⚠️ 底座实施中：manifest/spec 已按 2026-07-15 契约拍板定稿、插件可被宿主真实加载；但打印执行底座（P1）尚未开发，本插件当前无法在真实打印流程中被触发执行。契约以宿主仓 docs/sheet/future/14-printing/ 设计文档为准。
+> ✅ 打印扩展底座已交付并真机验证（2026-07-16），本插件可在真实打印流程中加载运行；契约以宿主仓 docs/sheet/future/14-printing/ 设计文档（含 2026-07-15 实施拍板与真机修正）为准。
 
 参考实现：[`kimpo-print-extension/print-demo-layout-override/`](https://github.com/somsne/kimpo-print-extension/tree/main/print-demo-layout-override/)
 
@@ -62,14 +62,12 @@ print-demo-layout-override/
   "version": 1,
   "target": { "scope": "leaf", "leafId": null },
   "pageSetupOverride": {
-    "paper": "A5",
+    "paperSize": "A5",
     "orientation": "landscape",
-    "marginsPreset": "narrow",
+    "marginPreset": "narrow",
     "fitAllColumnsOnePage": true,
-    "headerFooter": {
-      "footer": {
-        "right": { "kind": "text", "text": "打印人：{{user.name}} &D", "fontSizePt": 9 }
-      }
+    "footer": {
+      "right": { "kind": "text", "text": "打印人：&U — &D &T", "fontSizePt": 9 }
     }
   },
   "output": { "kind": "print" }
@@ -81,11 +79,11 @@ print-demo-layout-override/
 - `version: 1` —— 契约版本号，供派蒙侧 JSON Schema 校验。
 - `target.scope: "leaf"` —— 局部打印的核心：打印目标从默认的 `activeContainer`（整个容器）收窄为**单个叶子分区**。四种取值：`activeContainer`（当前容器，默认）/ `leaf`（指定叶子）/ `selection`（选定区域）/ `printArea`（模板设定的打印区域）。
 - `target.leafId: null` —— 要打的叶子分区 ID。**`null`（2026-07-15 拍板语义）指"当前活动叶子"**——演示插件因此无需配真实叶子 ID 即可跑通；真实业务插件若要固定打某个具名分区（而不是"当前选中哪个打哪个"），把这里换成叶子结构清单里的真实 leafId 即可（清单可从 PrintContext 的模板结构信息里拿到）。
-- `pageSetupOverride` —— 与派蒙 SheetPageSetup **同构的增量覆盖**：只写你要改的字段，**没写（null）的字段一律沿用模板保存值**——所以本方案不会影响模板原有的打印区域、居中等其他设置：
-  - `paper: "A5"` + `orientation: "landscape"` —— 回执用半张 A4 的横向小纸，静默切换、不落库、不弄脏模板设置；
-  - `marginsPreset: "narrow"` —— 窄边距预设，小纸面尽量留给内容；
+- `pageSetupOverride` —— 与派蒙 SheetPageSetup **同构的增量覆盖**：只写你要改的字段，**没写（null）的字段一律沿用模板保存值**——所以本方案不会影响模板原有的打印区域、居中等其他设置。⚠️ **字段名必须与 SheetPageSetup 完全一致，未知字段会被静默忽略**（2026-07-15 真机修正：早期文稿的 `paper`/`marginsPreset`/`headerFooter` 包裹形均为错误写法）：
+  - `paperSize: "A5"` + `orientation: "landscape"` —— 回执用半张 A4 的横向小纸，静默切换、不落库、不弄脏模板设置；
+  - `marginPreset: "narrow"`（单数）—— 窄边距预设，小纸面尽量留给内容；
   - `fitAllColumnsOnePage: true` —— 回执区所有列缩到一页宽，A5 纸窄，防止横向裂页；
-  - `headerFooter` —— 与派蒙页眉页脚结构同构（header/footer 各含 left/center/right 三段，每段 `kind` 为 `text` 或 `image` 二选一）。本例只覆盖**页脚右段**：`text` 里混用两套变量——`{{user.name}}` 取当前打印人姓名（受限表达式，`user.*` 命名空间），`&D` 是页眉页脚内置日期变量；`fontSizePt: 9` 小字号落款。
+  - `footer` —— 页眉/页脚是 SheetPageSetup 的**顶层字段** `header`/`footer`（各含 left/center/right 三段，每段 `kind` 为 `text` 或 `image` 二选一）。本例只覆盖**页脚右段**，用页眉页脚内置变量 `&U`（制表人）`&D`（日期）`&T`（时间）；`fontSizePt: 9` 小字号落款。
 - **没有 `layers`、没有 `pageTemplate`** —— 本方案纯 L1：不叠图层、不做框式编排，就是"换版式 + 抠区域"。
 - `output.kind: "print"` —— 回执直接唤起浏览器打印。要存档时可改 `"pdf"`（下载，`fileName` 支持变量）或 `"pdfBlob"`（成品回递插件）。
 

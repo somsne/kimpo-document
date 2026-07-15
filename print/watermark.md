@@ -1,6 +1,6 @@
 # 水印打印 · 按单据状态动态水印（A 档纯声明式）
 
-> ⚠️ 底座实施中：manifest/spec 已按 2026-07-15 契约拍板定稿、插件可被宿主真实加载；但打印执行底座（P1）尚未开发，本插件当前无法在真实打印流程中被触发执行。契约以宿主仓 docs/sheet/future/14-printing/ 设计文档为准。
+> ✅ 打印扩展底座已交付并真机验证（2026-07-16），本插件可在真实打印流程中加载运行；契约以宿主仓 docs/sheet/future/14-printing/ 设计文档（含 2026-07-15 实施拍板与真机修正）为准。
 
 参考实现：[`kimpo-print-extension/print-demo-watermark/`](https://github.com/somsne/kimpo-print-extension/tree/main/print-demo-watermark/)
 
