@@ -150,6 +150,8 @@ func main() {
 
 | 文档 | 读者 | 内容 |
 |---|---|---|
+| [tutorial-for-end-users.md](workflow/tutorial-for-end-users.md) | 终端用户（填单人/审批人）新手 | 使用教程：提交按钮/任务中心/通知三入口 → 提交单据（含多流程手选弹窗与"未绑定流程"分支）→ 单据四状态 → 办理任务四步（认领/意见/同意/不同意后果/暂存/批量）→ 被退回后修改重提 → 撤回与催办 → 转办/委托/加签速览 → 报障式 FAQ |
+| [tutorial-for-app-developers.md](workflow/tutorial-for-app-developers.md) | 应用开发者（搭应用配流程，零编程）新手 | 搭建教程：五概念说人话（定义/版本/绑定/实例/任务）→ 画图-配节点-发布四步 → **绑定专讲**（「服务的模板」面板 / 流转条件 `{{field:xxx}}` 唯一合法写法 / 优先级 / 三条绑定规则）→ 提交路由裁决（唯一命中自动走·0 或多条命中弹手选）→ 真机验证清单 → 改版与在途单据 → 按"用户报障"整理的排查 FAQ |
 | [for-end-users.md](workflow/for-end-users.md) | 业务用户 / 流程设计者（零编程） | 把流程设计讲透：五分钟上手请假流 → 设计器操作手册 → **12 类节点逐个讲解** → 十种取人规则 → 多人模式与否决策略 → 智能去重/空兜底 → 超时提醒与升级 → 条件分支与结束语义 → 发布校验报错对照与版本规则 → 任务中心办理全集（认领/退回重提/撤回/转办/委托/加签/催办/批量）→ FAQ |
 | [for-human-developers.md](workflow/for-human-developers.md) | 人类开发者 | 引擎原理："什么都不亲自干"的插件架构 → 单方法 gRPC 信封与两个 REST 代理 → 十表数据模型 → 不可变版本与缓存 → Advance 推进内核与"等待态间单事务"铁律 → 操作框架三件套（身份/幂等/append-only 流水）→ 取人管线 → 提交链路/flow_status/编辑锁定三个衔接点 → 定时与事件 → 扩展点与红线 → FAQ |
 | [for-llm-agents.md](workflow/for-llm-agents.md) | AI 编程助手 | 结构化契约版：FACTS(F1-F18) / DATA MODEL / STATE ENUMS / OP+REST INTERFACE / NODE CONFIG SCHEMA / 取人管线 / MUST-MUST NOT / 典型序列 / 错误码表 / 自检清单。整体喂给你的 AI 即可 |
