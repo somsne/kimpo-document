@@ -75,7 +75,7 @@ my-plugin-1.0.0.kpp
   "category": "action",
   "entry": { "backend": "plugin.bin" },
   "config_schema": "config.schema.json",
-  "process": { "memory_limit_mb": 128, "cpu_limit_pct": 25, "max_concurrent_grpc": 8 },
+  "process": { "memory_limit_mb": 0 },       // <=0 或不设置表示不限制
   "permissions": { "network": [], "storage": false, "exec": false },  // 诚实最小化
   "lifecycle": { "allow_multiple_config_instances": true, "max_config_instances": 8 },
   "capabilities": {
@@ -186,7 +186,7 @@ func main() {
 - **R1 数据唯一通道**：业务数据读写只走 `host.Mirror()` / `host.Record()`，查询只走 `host.Query()`。**禁止**：直连编辑器插件（import editorpb / 调 editor RPC / 经 WS 命令写值）、自拼 SQL 碰 `app_table_*` 物理表、读"界面显示值"当数据源。
 - **R2 grant 纪律**：`write_grant` 是宿主按单次动作调用签发的一次性凭证——原样透传，**禁止**缓存、持久化、跨动作复用、伪造。
 - **R3 插件间低耦合**：插件之间**只能**经宿主能力总线（`Capability()`）交互，禁止互相直连进程/共享文件/私自约定端口。
-- **R4 权限诚实最小化**：manifest `permissions`（network/storage/exec）按实际需要声明，`process` 资源限额如实填写。
+- **R4 权限诚实最小化**：manifest `permissions`（network/storage/exec）按实际需要声明；后端插件可用 `process.memory_limit_mb` 建议实例内存上限，`<=0` 或不设置表示不限制，管理员安装后可在插件中心覆盖。
 - **R5 进程行为**：优雅处理 SIGTERM 退出；不 fork 不受管的子进程；不绕过 SDK 自建对宿主的连接。
 
 ### 5.2 工程规范（强烈建议，上架审查参考）
