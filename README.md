@@ -5,6 +5,16 @@
 - 读者：人类工程师 与 AI 编程助手（部分专题提供两个版本）。
 - 原则：所有文档**不依赖宿主源码可读**，可独立分发；与宿主内部架构文档分工明确——这里只讲"你该知道什么、该怎么接"。
 
+> **接口版本注（2026-08-06 首版，2026-08-20 按 V3.4 收官口径复核）**：本仓文档中的 `host.Query()`／
+> `host.Record()`／KimpoSQL 属查询体系 **Alice V1**——**当前生产实现，现在照做即正确**（取数／新增／
+> 修改／删除对外仍以 V1 为权威，V3.4 的切换正在进行、尚未接管）。
+> 平台正在开发 **Alice V3.4** 替换 V1，切换后：取数 → `Host.Alice().Query`；写记录 → `DeriveChangeSet`／
+> `SealChangeSet`／`ApplyChangeSet` 三段式（写入必须先产出可预览的 ChangeSet）；KimpoSQL 文本通道整体删除。
+> 届时插件交给宿主的不再是表达式文本或行集，而是 `PlanRef`／不透明 selector 加意图，行集不出宿主。
+> 届时需同步修订的文档：`expression/`（3 份，需整体重写）、`mirror/`（2）、`permission/`（2）、
+> `fields/timezone-*`（2）与本 README，共 10 份。**开发规范 R1（禁裸 SQL、业务数据只走宿主通道）本身不变。**
+> 依据：Kimpo 平台内部契约 `D11e`（Alice V1 退役计划）、`R-SDK-03`（Alice Data Service）§4.3 消费方迁移映射。
+
 ---
 
 ## 1. Kimpo 是什么

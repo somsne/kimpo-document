@@ -4,6 +4,8 @@
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"读写填报表单业务数据"的插件代码前，先满足 SELF-CHECK。
 > HUMAN VERSION: 同目录 `for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按 SDK 原样。
+> VERSION: F10／R2 中的 `Host.Query()`／KimpoSQL 属 **Alice V1**（当前生产）。Alice V3.4 替换后 →
+> `Host.Alice().Query`，KimpoSQL 文本通道删除；Mirror(Aria) 语义与红线不变。依据：内部契约 `D11e`、`R-SDK-03` §4.3。
 
 ## FACTS（事实，编号可引用）
 

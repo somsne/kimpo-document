@@ -3,6 +3,13 @@
 > 用法：把本文整体喂给你的 AI 编程助手。它是 `for-human-developers.md` 的机读版：FACTS / INTERFACE / NULL-SEMANTICS / MUST-MUST NOT / 典型序列 / 自检清单。
 > 术语：Alice=宿主查询体系（表达式编译+执行）；Aria=表单数据权威层 Mirror；模型=ExpressionModel JSON。
 
+> **适用版本：Alice V1**（当前生产实现；截至 2026-08-20 对外仍以 V1 为权威，V3.4 切换进行中）。下列 FACTS／INTERFACE 在
+> 查询内核换代到 **Alice V3.4** 后失效，届时本文需整体重写：F1/I1 `SubmitExpression` → `Host.Alice().Query`；
+> I3 一步写 → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` + `MirrorWriteFence`；F2 KimpoSQL 文本通道删除；
+> F5 ValueRef 8 类 → Canonical IR + tagged-union value（`Missing|Null|Bool|…`）；F8 `o_*`／`m_*` 列契约不再由插件解释；
+> I4/F11 `compile-preview` 旧端点更换；**N2 `SUM(全空)=0` 反转为 NULL**（V3.4 两种 `null_mode` 下均为 NULL）；
+> **N3 F7 固定族规则 → 计划内 parameter policy**。依据：内部契约 `D11e`、`R-SDK-03` §2.7／§4.3。
+
 ## FACTS（可依赖的事实）
 
 - F1 角色分工：插件提交 ExpressionModel → 宿主 Alice 编译成 SQL 并只读执行 → 行集回插件 → 插件内存加工 → 经 Aria Mirror 写回。插件全程零 SQL、零数据库连接。

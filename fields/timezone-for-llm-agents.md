@@ -5,6 +5,9 @@
 > HUMAN VERSION: 同目录 `timezone-for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按 SDK 原样。
 > REVISION: 2026-07-14（取数链路换算已实施；date 按 datetime 处理；v1.1 平台责任边界拍板——SQL 内成分提取与视图均为设计者责任）。
+> VERSION: F16／F5 中的旧文本 KimpoSQL 通道与 `Host.Record()` 属 **Alice V1**（当前生产）。Alice V3.4 替换后
+> KimpoSQL 通道整体删除、`Host.Record()` → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`；时区换算语义不变。
+> 依据：内部契约 `D11e`、`R-SDK-03` §4.3。
 
 ## FACTS（事实，编号可引用）
 

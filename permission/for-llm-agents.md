@@ -4,6 +4,9 @@
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"涉及权限判断/权限界面/受管数据访问"的代码前，先满足 SELF-CHECK。
 > HUMAN VERSION: 同目录 `for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按现有 API 原样。
+> VERSION: 文中 `host.Query()`／`host.Record()`（含 P3 与示例代码）属 **Alice V1**（当前生产）。Alice V3.4 替换后 →
+> `Host.Alice().Query` 与 `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`；卡侬(Canon) 判定语义不变。
+> 依据：内部契约 `D11e`、`R-SDK-03` §4.3。
 
 ## FACTS（事实，编号可引用）
 

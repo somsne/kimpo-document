@@ -4,6 +4,14 @@
 > 读完你会明白：Alice 是什么、一次查询从设计到落值的完整旅程、空值在这条链上的确定行为，以及怎么用 SDK 十分钟接上。
 > 配套：给 AI 编程助手的结构化版本在同目录 `for-llm-agents.md`；空值语义的业务讲解见 `../fields/empty-values-for-human-developers.md`。
 
+> **适用版本：Alice V1**（当前生产实现；截至 2026-08-20，取数／新增／修改／删除对外仍以 V1 为权威，V3.4 切换进行中、尚未接管）。
+> 查询内核换代到 **Alice V3.4** 后本文**需整体重写**，已知会失效的硬事实：
+> `SubmitExpression` → `Host.Alice().Query`；`Host.Record()` 一步写 → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`
+> 三段式（写入必须先出可预览的 ChangeSet）；KimpoSQL 文本通道整体删除（§2「两条通道并存」作废）；
+> `o_*`／`m_*` 隐藏列协议不再由插件解释；`/api/v1/…/action-system/expression/compile-preview` 等旧入口更换；
+> **`SUM(空集)` 由 0 反转为 NULL**；**空参数条件裁剪（F7）由固定族规则改为计划内 parameter policy + `null_mode`**。
+> 依据：Kimpo 平台内部契约 `D11e`（Alice V1 退役计划）与 `R-SDK-03`（Alice Data Service）§4.3 消费方迁移映射。
+
 ---
 
 ## 1. Alice 是什么：一个翻译官的故事

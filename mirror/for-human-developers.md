@@ -4,6 +4,10 @@
 > 读完你会明白：Mirror(Aria) 是什么、为什么必须经过它、以及怎么用 SDK 十分钟接上。
 > 配套：给大模型/AI 编程助手看的结构化版本在同目录 `for-llm-agents.md`（把它喂给你的 AI 助手，它就懂规矩）。
 
+> **接口版本注**：本文出现的 `host.Query()`／KimpoSQL 属查询体系 **Alice V1**（当前生产实现）。查询内核换代到
+> Alice V3.4 后改为 `Host.Alice().Query`、KimpoSQL 文本通道整体删除；**Mirror(Aria) 本身与本文红线
+> （禁裸 SQL、业务数据只走 Mirror）不变**。依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+
 ---
 
 ## 1. 表单数据权威层 Mirror(Aria) 是什么：一个账本的故事
