@@ -137,12 +137,12 @@ err = mirror.ReorderDetailRows(ctx, sessionID, tableID, orderedKeys, writeGrant)
 
 ### 5.6 查询（读别的模板/数据表）
 
-跨模板取数不要自己碰数据库。用 `host.Query()` 提交表达式模型（或 KimpoSQL 文本），宿主负责编译成 SQL、鉴权、执行，返回行集给你在内存里加工。详见取数插件参考实现与《查询执行概念与业务逻辑》。
+跨模板取数不要自己碰数据库。使用 `host.Alice()` 的强类型接口，原样消费宿主签发的计划引用、执行上下文和 grant；宿主负责校验、执行并流式返回类型化行集，供插件在内存里加工。详见取数插件参考实现与《查询执行概念与业务逻辑》。
 
 ## 6. 红线（PR 审查会卡的五条）
 
 1. ❌ **禁止直连编辑器**：不 import editorpb、不调编辑器 RPC、不经 WS 命令写业务值。
-2. ❌ **禁止裸 SQL** 读写 `app_table_*` 业务表——查询一律走 `host.Query()`。
+2. ❌ **禁止裸 SQL** 读写 `app_table_*` 业务表——查询一律走 `host.Alice()`；`host.Query()` 是已退役空壳。
 3. ❌ **禁止囤积/复用 writeGrant**（它是一次性调用凭证）。
 4. ❌ **禁止把编辑器/浏览器当数据源**——要权威值就 `ReadField(waitSettled=true)`。
 5. ❌ （编辑器类插件）禁止把宿主写入的值原样回投——必须实现来源过滤。
@@ -162,4 +162,4 @@ err = mirror.ReorderDetailRows(ctx, sessionID, tableID, orderedKeys, writeGrant)
 用 `WriteFields` 分批（每批同表），一批一个屏障窗口；不要几百次 `WriteField` 单调。
 
 ---
-*参考实现：`kimpo-extraction`（取数插件）——它的全部宿主交互就是 `host.Query()` + `host.Mirror()`，是本规范的活样板。*
+*参考实现：`kimpo-extraction`（取数插件）——它的数据语义交互收口为 `host.Alice()` + `host.Mirror()`，是本规范的活样板。*

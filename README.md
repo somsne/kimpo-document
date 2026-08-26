@@ -21,7 +21,7 @@ Kimpo 是一个**电子表格式的低代码表单/报表平台**：管理员在
 | **字段（Field）** | 业务数据最小单元，绑定到模板的单元格；分 **input**（用户/插件可写）与 **computed**（公式派生，只读） |
 | **动作（Action）** | 模板上编排的自动化流程（如"打开表单时取数"）：触发时机 + 条件 + 动作节点。**动作的执行体由插件贡献** |
 | **表单数据权威层 Mirror（代号 艾莉亚/Aria）** | 填报态业务数据的**唯一权威**：会话级内存镜像，所有读写经宿主统一入口有序进行。插件读写表单数据的唯一通道 → 必读 [aria/](#3-文档目录) |
-| **表达式/查询** | 平台统一的取数语言：插件提交表达式模型（或 KimpoSQL 文本），宿主编译成 SQL 执行并返回行集——**插件永不碰裸 SQL** |
+| **表达式/查询** | 平台统一的取数语言：插件通过 `Host.Alice()` 提交宿主签发的计划引用、执行上下文与强类型参数，宿主校验后执行并流式返回类型化行集——**插件永不碰裸 SQL** |
 
 ## 2. 插件体系
 
@@ -105,7 +105,8 @@ func main() {
 | 客户端 | 用途 |
 |---|---|
 | `Mirror()` | **填报态业务数据读写**（艾莉亚(Aria)，必读 aria/ 文档） |
-| `Query()` | 反向查询：提交表达式模型/KimpoSQL，宿主编译执行返回行集 |
+| `Alice()` | 唯一通用数据语义入口：校验/解释、类型化流式查询，以及 Derive → Seal → Apply 写链 |
+| `Query()` | **已退役空壳**：不再提供任何查询方法；只为旧判空/测试假体暂存，禁止新代码使用 |
 | `Record()` | 记录级写服务（写动作 insert/update/delete 专用通道） |
 | `Logger()` | **分级日志上报**（见规范 R5）；`Log()` 为底层通道 |
 | `Template()` | 模板/记录元数据读取（设计文档、报表记录快照等） |
@@ -175,7 +176,7 @@ func main() {
 ## 4. 快速开始（动作插件 10 分钟骨架）
 
 1. **脚手架**：用 `new-action-plugin` 脚手架生成骨架（manifest / main.go / Makefile / config.schema.json）。
-2. **实现动作**：在注册的动作 handler 里，从 `query_context` 取 `sheet_session_id`/`write_grant`，用 `host.Query()` 取数、`host.Mirror()` 写回（照抄 aria 文档 S1-S3 序列）。
+2. **实现动作**：在注册的动作 handler 里，原样使用宿主签发的 Alice 计划/上下文/grant，经 `host.Alice()` 取数；需要改变当前表单业务值时再用 `host.Mirror()` 写回（照抄 mirror 文档 S1-S3 序列）。
 3. **构建打包**：`make build` 产 `plugin.bin`（目标平台注意 GOOS/GOARCH，避免陈旧 x86_64 在 ARM 宿主上走翻译层）→ zip 成 `.kpp`。
 4. **安装验证**：`POST /api/v1/plugins/install` 上传 → 平台自动重启 sidecar → 在模板动作编排里挂上你的动作真机验证。日志看宿主控制台"插件日志"（你经 `host.Logger()` 上报的会集中展示）。
 
@@ -183,7 +184,7 @@ func main() {
 
 ### 5.1 硬性红线（违反即打回）
 
-- **R1 数据唯一通道**：业务数据读写只走 `host.Mirror()` / `host.Record()`，查询只走 `host.Query()`。**禁止**：直连编辑器插件（import editorpb / 调 editor RPC / 经 WS 命令写值）、自拼 SQL 碰 `app_table_*` 物理表、读"界面显示值"当数据源。
+- **R1 数据唯一通道**：当前填报业务数据只走 `host.Mirror()`，通用查询/变更只走 `host.Alice()`。**禁止**：直连编辑器插件（import editorpb / 调 editor RPC / 经 WS 命令写值）、自拼 SQL 碰 `app_table_*` 物理表、读"界面显示值"当数据源。`host.Query()` 只是已退役空壳，不是兼容查询通道。
 - **R2 grant 纪律**：`write_grant` 是宿主按单次动作调用签发的一次性凭证——原样透传，**禁止**缓存、持久化、跨动作复用、伪造。
 - **R3 插件间低耦合**：插件之间**只能**经宿主能力总线（`Capability()`）交互，禁止互相直连进程/共享文件/私自约定端口。
 - **R4 权限诚实最小化**：manifest `permissions`（network/storage/exec）按实际需要声明；后端插件可用 `process.memory_limit_mb` 建议实例内存上限，`<=0` 或不设置表示不限制，管理员安装后可在插件中心覆盖。
@@ -202,7 +203,7 @@ func main() {
 ### 5.3 提交前自检清单
 
 ```
-□ 只出现 host.Mirror()/Record()/Query()，无 editorpb、无裸 SQL      (R1)
+□ 数据语义只出现 host.Mirror()/Alice()，无 editorpb、无裸 SQL       (R1)
 □ write_grant 未被缓存/复用                                        (R2)
 □ 插件间交互只经 Capability()                                      (R3)
 □ manifest 权限与资源限额如实                                       (R4)
@@ -215,6 +216,6 @@ func main() {
 
 | 插件 | 看什么 |
 |---|---|
-| **kimpo-record-extraction**（取数） | 动作插件全范式：`Host.Query()` 反向取数 + `Host.Mirror()` 写回 + 内存加工（左驱 join/填充策略）+ 分级日志 |
+| **kimpo-record-extraction**（取数） | 动作插件范式：消费宿主下发的 Alice 计划/选择器，经 `Host.Alice()` 类型化流式取数 + `Host.Mirror()` 写回 + 分级日志 |
 | **kimpo-record-create / update / delete**（三写） | 写动作范式：`Host.Record()` 记录写通道 + 表达式来源 + grant 消费 |
 | **kimpo-sheet**（电子表格编辑器） | 编辑器插件契约：多方向注册、艾莉亚(Aria)编辑器三契约、前端 Surface |

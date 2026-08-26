@@ -16,7 +16,7 @@
 - **F7** `write_grant` 是宿主按**单次动作调用**签发的写授权令牌（call-scoped），随触发上下文 `query_context` 注入，只覆盖动作配置声明的目标表/字段。
 - **F8** 公式派生字段（computed）对插件只读：宿主在写入口按"列级 computed 登记"拒写（`computed_readonly`）。computed 的值由 editor 重算后经结算通道回写 Mirror。
 - **F9** 写成功但"渲染通知失败"= **权威已写入、会随保存落库**，仅界面未即时刷新。业务流程按成功处理。
-- **F10** 跨模板/数据表查询走 `Host.Query()`：插件提交表达式模型或 KimpoSQL 文本，宿主编译执行返回行集；插件内存加工。插件禁止裸 SQL。
+- **F10** 跨模板/数据表查询走 `Host.Alice()`：插件原样消费宿主签发的计划引用、执行上下文和 grant，流式接收类型化行集并在内存加工。`Host.Query()` 是已退役空壳，不提供兼容查询。插件禁止裸 SQL。
 
 ## INTERFACE（SDK `plugin.MirrorClient`，来自 kimpo-plugin-sdk/plugin/host.go）
 
@@ -77,7 +77,7 @@ SyncFields / ReportCalcState / BuildPayload / AllocateDetailRow / MarkRowDeleted
 ## RULES（硬约束）
 
 - **R1 MUST** 一切业务数据读写经 `host.Mirror()`；**MUST NOT** import editorpb、调 editor RPC、经 WS 命令写业务值。
-- **R2 MUST NOT** 对 `app_table_*` 物理表执行任何自拼 SQL；查询一律 `host.Query()`。
+- **R2 MUST NOT** 对 `app_table_*` 物理表执行任何自拼 SQL；查询一律 `host.Alice()`。
 - **R3 MUST** `writeGrant` 从当次触发上下文取用并原样透传；**MUST NOT** 缓存、持久化或跨动作复用。
 - **R4 MUST** 需要权威值的读传 `waitSettled=true`；**MUST NOT** 以浏览器/editor 展示值为数据源。
 - **R5 MUST** typedValue 用 F6 线格式；数值 raw 放数值型，text 放渲染串。
@@ -132,7 +132,7 @@ for len(rowKeys) < need {
 
 ## SELF-CHECK（生成代码前逐项确认）
 
-1. 所有业务数据交互是否只出现 `host.Mirror()` 与 `host.Query()`？（R1/R2）
+1. 所有业务数据交互是否只出现 `host.Mirror()` 与 `host.Alice()`？（R1/R2）
 2. 每个写调用是否带了来自触发上下文的 grant？（R3）
 3. 需要计算后值的读是否 `waitSettled=true`？（R4）
 4. typedValue 是否 `{"raw","text"}` 双字段？（R5）

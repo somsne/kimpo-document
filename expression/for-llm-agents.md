@@ -6,7 +6,7 @@
 ## FACTS（可依赖的事实）
 
 - F1 角色分工：插件提交 ExpressionModel → 宿主 Alice 编译成 SQL 并只读执行 → 行集回插件 → 插件内存加工 → 经 Aria Mirror 写回。插件全程零 SQL、零数据库连接。
-- F2 两条通道：文本 KimpoSQL（单表 SELECT，无 JOIN/GROUP BY，能力受限）与表达式模型通道（多表 JOIN/分组/开窗/上下文物化，全能力）。新开发一律模型通道。
+- F2 唯一通道：通用取数只走 `Host.Alice()` 的版本化强类型协议。裸文本查询通道已退役；历史内容不再查看、测试、保存或执行，必须重建为结构化表达式。
 - F3 来源表三维标记：source_type 恒 'template'（view/other 未开发即拒）；is_context bool（true=本报表上下文，运行期物化 Mirror 快照为 ctx_<alias> 临时表，按 sheet_session 隔离，含未落库脏值）；role main/detail（驱动编辑器注入 record_id 自动左关联；后端只消费不校验）。
 - F4 条件模型：where（ConditionGroup 布尔树 {logic:and|or, negate, items[]}，叶子 Predicate{left,op,right}）与 where_expr（raw 整段）互斥。CompareOp = eq|neq|lt|lte|gt|gte|like|in|not_in|is_null|is_not_null。
 - F5 ValueRef 8 类：source_field / system_var / const / func / raw / window / case / form_field。编辑器不产 form_field——本报表字段=is_context 表的 source_field（别名 bt*）。
@@ -32,14 +32,14 @@
 
 ## INTERFACE（怎么调）
 
-- I1 反向查询（插件→宿主）：`host.Query().SubmitExpression(ctx, modelJSON, triggerContext, paramValues) → (rowsJSON, columnsJSON, err)`。rows=[]map[colName]any。旧 SubmitQuery(kimpoSQL) 仅单表场景。
+- I1 反向查询（插件→宿主）：`host.Alice().Query(ctx, *hostv2pb.QueryRequest) → AliceQueryStream`。请求必须携带宿主签发的 `PlanRef`/`ExecutionContextRef`/`query_grant` 与强类型 bindings；插件循环 `Recv()` 直到 `io.EOF`，提前停止时取消 context。`host.Query()` 仅是已退役空壳。
 - I2 触发上下文注入（原样取用禁伪造）：query_context.sheet_session_id / write_grant / system_vars。
 - I3 写回：`host.Mirror().WriteField/WriteFields`（批量分批=一批一个屏障窗口）；行操作 AppendDetailRow/RemoveDetailRow/ReorderDetailRows；错误语义遵守 aria 契约（AppliedRevision>0=权威已写仅渲染失败，按成功处理）。
-- I4 设计态：动作配置 surface 挂共享包 @kimpo/expression-editor；校验/排障调 POST …/expression/compile-preview（dry-run）与 …/expression/parse-sql（纯语法）。
+- I4 设计态：动作配置 surface 挂共享包 @kimpo/expression-editor；校验/排障只调 POST …/expression/compile-preview（dry-run）。旧文本解析端点已退役且不再注册。
 
 ## MUST
 
-- M1 查询只走 SubmitExpression；写只走 Mirror/Record 通道。
+- M1 通用查询只走 `Host.Alice()` 强类型协议；填报态业务数据只以 Mirror/Aria 为权威。
 - M2 新增函数同时改 funcs.DefaultRegistry + bind.functionSignatures，并补编译/绑定两层测试。
 - M3 写回空值用 raw:nil；读到 null 保持 null 加工，需要数值语义时显式 coalesce 在**表达式里**做。
 - M4 匹配键构造遵守 N5；多分量键任一空即整键无效。
@@ -57,7 +57,7 @@
 ## 典型序列（取数动作）
 
 1. 设计态：编辑器产出模型（source: 显式表 + 按需 bt* 上下文表；where 条件树；target: outputs+match_keys+clear+post_sort）→ compile-preview 校验。
-2. 运行态：动作触发 → 插件取 query_context → SubmitExpression → 行集(o_*/m_*) → applyFillStrategy / 左驱匹配 / clear / post_sort → Mirror 写回（grant 白名单内）→ 完。
+2. 运行态：动作触发 → 插件消费宿主签发的计划/上下文/grant → `Host.Alice().Query` 类型化流 → 宿主权威语义处理 → Mirror 写回（grant 白名单内）→ 完。
 
 ## 自检清单（提交前）
 

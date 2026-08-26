@@ -39,7 +39,7 @@
 关键性质：
 
 - **preview 与运行同源**：`compile-preview` 端点跑的就是运行态编译器，预览出的 SQL 即真实执行的 SQL——设计态排障首选。
-- **两条通道并存**：文本 KimpoSQL（单表、能力受限）与表达式模型（多表 JOIN/分组/开窗，全能力）。新功能一律走表达式模型通道。
+- **唯一通道**：通用取数只走 `Host.Alice()` 的版本化强类型协议；裸文本查询通道已退役，不再查看、测试、保存或执行旧内容。历史配置必须用结构化表达式重建，不自动转换。
 - **本报表上下文（is_context）**：条件里引用"本报表某字段"时，Alice 把当前填报会话的 Mirror 快照（含未落库的脏值）物化成临时表参与 JOIN，天然把查询"限定在当前单据语境"。
 
 ## 3. 表达式模型：你要产出的东西
@@ -88,14 +88,17 @@ host := plugin.HostFrom(ctx)
 sessionID := queryContext["sheet_session_id"]
 grant     := queryContext["write_grant"]
 
-// ② 提交表达式模型（设计态编辑器落库的 behavior JSON 原样透传）
-rows, cols, err := host.Query().SubmitExpression(ctx, modelJSON, triggerCtx, nil)
+// ② 只消费宿主签发的计划引用/执行上下文/grant，禁止插件自行伪造
+stream, err := host.Alice().Query(ctx, &hostv2pb.QueryRequest{
+    Plan: planRef, Context: executionContext, QueryGrant: queryGrant, Parameters: bindings,
+})
+// ③ 循环 stream.Recv() 直到 io.EOF；提前停止必须取消 ctx，让宿主同步取消数据库执行
 
-// ③ 内存加工：按 o_<目标字段ID> 读输出列、m_<seq> 读匹配键列
+// ④ 内存加工：按已绑定的输出元数据读取类型化列
 //    填充策略/分隔符/清空/写回后排序 —— 插件职责
 //    DISTINCT/LIMIT/排序 —— 已在 SQL 里做完，别重复做
 
-// ④ 经 Aria 写回（批量用 WriteFields 分批；错误语义遵守 aria 契约）
+// ⑤ 经 Aria 写回（批量用 WriteFields 分批；错误语义遵守 mirror 契约）
 host.Mirror().WriteFields(ctx, sessionID, tableID, items)
 ```
 
@@ -103,7 +106,7 @@ host.Mirror().WriteFields(ctx, sessionID, tableID, items)
 
 ## 6. 红线与坑（每条都有人踩过）
 
-1. **永不碰裸 SQL / 物理表**：不 import 数据库驱动、不拼 `app_table_*`。查询只走 `host.Query()`。
+1. **永不碰裸 SQL / 物理表**：不 import 数据库驱动、不拼 `app_table_*`。查询只走 `host.Alice()`，不调用已退役的 `host.Query()` 空壳。
 2. **函数白名单双源**：新增函数要同时登记 `funcs.DefaultRegistry` 与 bind 包 `functionSignatures`，漏一边=设计态过、绑定期炸。
 3. **DISTINCT/LIMIT/查询排序是 SQL 侧的**；插件内存只做 fill/separator/clear/post_sort。
 4. **主明细 record_id 自动关联是编辑器注入的**，后端只消费不校验——别手工构造模型时传错别名。
