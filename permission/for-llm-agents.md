@@ -87,7 +87,7 @@ S1 动作插件（什么都不做即正确）：
 ```go
 // 动作被触发 ⇒ 用户已有权。直接干业务：
 host := plugin.HostFrom(ctx)
-rows, _ := host.Query().Execute(...)          // 宿主套用查询者权限
+stream, _ := host.Alice().Query(ctx, request) // 计划/上下文/grant 由宿主签发并校验
 host.Mirror().WriteFields(..., writeGrant)    // 动作级 grant 原样透传
 // ← 全程无任何权限代码。若出现 CheckPermission/isAllowed 之类 ⇒ 设计错误
 ```
