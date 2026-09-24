@@ -4,13 +4,17 @@
 > 读完你会明白：Alice 是什么、一次查询从设计到落值的完整旅程、空值在这条链上的确定行为，以及怎么用 SDK 十分钟接上。
 > 配套：给 AI 编程助手的结构化版本在同目录 `for-llm-agents.md`；空值语义的业务讲解见 `../fields/empty-values-for-human-developers.md`。
 
-> **适用版本：Alice V1**（当前生产实现；截至 2026-08-20，取数／新增／修改／删除对外仍以 V1 为权威，V3.4 切换进行中、尚未接管）。
-> 查询内核换代到 **Alice V3.4** 后本文**需整体重写**，已知会失效的硬事实：
-> `SubmitExpression` → `Host.Alice().Query`；`Host.Record()` 一步写 → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`
-> 三段式（写入必须先出可预览的 ChangeSet）；KimpoSQL 文本通道整体删除（§2「两条通道并存」作废）；
-> `o_*`／`m_*` 隐藏列协议不再由插件解释；`/api/v1/…/action-system/expression/compile-preview` 等旧入口更换；
-> **`SUM(空集)` 由 0 反转为 NULL**；**空参数条件裁剪（F7）由固定族规则改为计划内 parameter policy + `null_mode`**。
-> 依据：Kimpo 平台内部契约 `D11e`（Alice V1 退役计划）与 `R-SDK-03`（Alice Data Service）§4.3 消费方迁移映射。
+> **适用版本注（2026-08-06 首版，2026-09-24 按 host/v2 AliceDataService 现状复核）**：本文档描述的
+> **Alice V1**（`SubmitExpression` 裸文本查询通道）与曾计划接替它的 **Alice V3.4**（`Host.Alice().Query`
+> 类型化流式查询 + `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 写链三段式）均已整体退役——
+> `SubmitExpression` 随 V1 一并删除；`Validate`／`Explain`／`Query`／`DeriveChangeSet`／`Catalog`／
+> `SealChangeSet` 六个 RPC 已全部从 `host/v2 alice.proto` 删除，全仓零消费方。**当前状态**：
+> `Host.Alice()` 只暴露两个方法——`ApplyChangeSet`（写入，经 SDK `ApplyMutation` 门面一次性提交，
+> 不经过本文描述的校验/解释/预览三段式）与 `Evaluate`（纯值求值，不触达任何数据源）；插件**查询**
+> 业务数据不经 `Host.Alice()`，走宿主预派发（动作触发时的取数配置）／取数等宿主侧能力。本文其余
+> 章节描述的"两条通道并存""ChangeSet 三段式""类型化流式查询"等具体交互形态均已不是当前实现，
+> 仅作历史背景保留；下方 §4 代码示例（`host.Alice().Query(...)`）已不可编译，仅供理解历史设计意图。
+> 依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ---
 
@@ -47,7 +51,7 @@
 关键性质：
 
 - **preview 与运行同源**：`compile-preview` 端点跑的就是运行态编译器，预览出的 SQL 即真实执行的 SQL——设计态排障首选。
-- **唯一通道**：通用取数只走 `Host.Alice()` 的版本化强类型协议；裸文本查询通道已退役，不再查看、测试、保存或执行旧内容。历史配置必须用结构化表达式重建，不自动转换。
+- **唯一通道（历史设计,现状见文首版本注）**：本节描述的"通用取数走 `Host.Alice()` 版本化强类型协议"是已退役的 V3.4 设计意图,并未成为现状——`Host.Alice()` 现只做写入与纯值求值,取数走宿主预派发/取数等宿主侧能力；裸文本查询通道（V1 `SubmitExpression`）同样已退役,不再查看、测试、保存或执行旧内容。历史配置必须用结构化表达式重建，不自动转换。
 - **本报表上下文（is_context）**：条件里引用"本报表某字段"时，Alice 把当前填报会话的 Mirror 快照（含未落库的脏值）物化成临时表参与 JOIN，天然把查询"限定在当前单据语境"。
 
 ## 3. 表达式模型：你要产出的东西
@@ -87,7 +91,7 @@
 
 **匹配键红线**：按行列匹配的内存 join 中，**匹配键任一分量为空的行不参与匹配**（源行按未命中处理、目标行不入索引）。"没填也算一档"的业务请给字段配默认值，不要指望空键互配。
 
-## 5. 动手：SDK 对接（取数类动作范式）
+## 5. 动手：SDK 对接（取数类动作范式，历史设计——见文首版本注，`host.Alice().Query` 已不存在）
 
 ```go
 host := plugin.HostFrom(ctx)
@@ -114,7 +118,7 @@ host.Mirror().WriteFields(ctx, sessionID, tableID, items)
 
 ## 6. 红线与坑（每条都有人踩过）
 
-1. **永不碰裸 SQL / 物理表**：不 import 数据库驱动、不拼 `app_table_*`。查询只走 `host.Alice()`，不调用已退役的 `host.Query()` 空壳。
+1. **永不碰裸 SQL / 物理表**：不 import 数据库驱动、不拼 `app_table_*`。查询走宿主预派发/取数等宿主侧能力，不调用已退役的 `host.Query()` 空壳；`host.Alice()` 现只用于写入（`ApplyChangeSet`）与纯值求值（`Evaluate`），不再承载查询。
 2. **函数白名单双源**：新增函数要同时登记 `funcs.DefaultRegistry` 与 bind 包 `functionSignatures`，漏一边=设计态过、绑定期炸。
 3. **DISTINCT/LIMIT/查询排序是 SQL 侧的**；插件内存只做 fill/separator/clear/post_sort。
 4. **主明细 record_id 自动关联是编辑器注入的**，后端只消费不校验——别手工构造模型时传错别名。

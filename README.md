@@ -5,15 +5,17 @@
 - 读者：人类工程师 与 AI 编程助手（部分专题提供两个版本）。
 - 原则：所有文档**不依赖宿主源码可读**，可独立分发；与宿主内部架构文档分工明确——这里只讲"你该知道什么、该怎么接"。
 
-> **接口版本注（2026-08-06 首版，2026-08-20 按 V3.4 收官口径复核）**：本仓文档中的 `host.Query()`／
-> `host.Record()`／KimpoSQL 属查询体系 **Alice V1**——**当前生产实现，现在照做即正确**（取数／新增／
-> 修改／删除对外仍以 V1 为权威，V3.4 的切换正在进行、尚未接管）。
-> 平台正在开发 **Alice V3.4** 替换 V1，切换后：取数 → `Host.Alice().Query`；写记录 → `DeriveChangeSet`／
-> `SealChangeSet`／`ApplyChangeSet` 三段式（写入必须先产出可预览的 ChangeSet）；KimpoSQL 文本通道整体删除。
-> 届时插件交给宿主的不再是表达式文本或行集，而是 `PlanRef`／不透明 selector 加意图，行集不出宿主。
-> 届时需同步修订的文档：`expression/`（3 份，需整体重写）、`mirror/`（2）、`permission/`（2）、
-> `fields/timezone-*`（2）与本 README，共 10 份。**开发规范 R1（禁裸 SQL、业务数据只走宿主通道）本身不变。**
-> 依据：Kimpo 平台内部契约 `D11e`（Alice V1 退役计划）、`R-SDK-03`（Alice Data Service）§4.3 消费方迁移映射。
+> **接口版本注（2026-08-06 首版，2026-09-24 按 host/v2 AliceDataService 现状复核）**：
+> `host.Query()`／`host.Record()`／KimpoSQL 属已退役的 Alice V1 查询体系，早已停止服务，仅作历史
+> 提及。`Host.Alice()` 当前是插件唯一的通用数据语义出站，且**只暴露两个方法**：
+> `ApplyChangeSet`（写入，经 SDK `ApplyMutation` 门面调用，一次性提交，不经过校验/解释/预览三段式）
+> 与 `Evaluate`（纯值求值，不触达任何数据源）。文档里历史出现过的 `Validate`／`Explain`／`Query`／
+> `DeriveChangeSet`／`Catalog`／`SealChangeSet` 六个 RPC 已全部从 `host/v2 alice.proto` 删除——
+> 全仓（含全部插件子模块）零消费方，未升级的老插件再调这些方法由宿主 gRPC 未注册方法兜底返回
+> `Unimplemented`。**插件查询业务数据不经 `Host.Alice()`**，走宿主预派发（动作触发时的取数配置）／
+> 取数等宿主侧能力；本仓 `expression/` 系列描述的取数原理仍按宿主预派发口径理解，不要按上述已删除
+> RPC 的"三段式"字面理解。**开发规范 R1（禁裸 SQL、业务数据只走宿主通道）本身不变。**
+> 依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ---
 
@@ -115,7 +117,7 @@ func main() {
 | 客户端 | 用途 |
 |---|---|
 | `Mirror()` | **填报态业务数据读写**（艾莉亚(Aria)，必读 aria/ 文档） |
-| `Alice()` | 唯一通用数据语义入口：校验/解释、类型化流式查询，以及 Derive → Seal → Apply 写链 |
+| `Alice()` | 唯一通用数据语义入口：只暴露 `ApplyChangeSet`（写入,经 SDK `ApplyMutation`）与 `Evaluate`（纯值求值）两个方法——查询数据走宿主预派发/取数等宿主侧能力,不经本入口 |
 | `Query()` | **已退役空壳**：不再提供任何查询方法；只为旧判空/测试假体暂存，禁止新代码使用 |
 | `Record()` | 记录级写服务（写动作 insert/update/delete 专用通道） |
 | `Logger()` | **分级日志上报**（见规范 R5）；`Log()` 为底层通道 |
@@ -194,7 +196,7 @@ func main() {
 
 ### 5.1 硬性红线（违反即打回）
 
-- **R1 数据唯一通道**：当前填报业务数据只走 `host.Mirror()`，通用查询/变更只走 `host.Alice()`。**禁止**：直连编辑器插件（import editorpb / 调 editor RPC / 经 WS 命令写值）、自拼 SQL 碰 `app_table_*` 物理表、读"界面显示值"当数据源。`host.Query()` 只是已退役空壳，不是兼容查询通道。
+- **R1 数据唯一通道**：当前填报业务数据只走 `host.Mirror()`，变更（写入）走 `host.Alice()`（`ApplyChangeSet`）；通用查询走宿主预派发/取数等宿主侧能力，不经 `host.Alice()`。**禁止**：直连编辑器插件（import editorpb / 调 editor RPC / 经 WS 命令写值）、自拼 SQL 碰 `app_table_*` 物理表、读"界面显示值"当数据源。`host.Query()` 只是已退役空壳，不是兼容查询通道。
 - **R2 grant 纪律**：`write_grant` 是宿主按单次动作调用签发的一次性凭证——原样透传，**禁止**缓存、持久化、跨动作复用、伪造。
 - **R3 插件间低耦合**：插件之间**只能**经宿主能力总线（`Capability()`）交互，禁止互相直连进程/共享文件/私自约定端口。
 - **R4 权限诚实最小化**：manifest `permissions`（network/storage/exec）按实际需要声明；后端插件可用 `process.memory_limit_mb` 建议实例内存上限，`<=0` 或不设置表示不限制，管理员安装后可在插件中心覆盖。

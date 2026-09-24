@@ -4,9 +4,13 @@
 > 读完你会明白：Mirror(Aria) 是什么、为什么必须经过它、以及怎么用 SDK 十分钟接上。
 > 配套：给大模型/AI 编程助手看的结构化版本在同目录 `for-llm-agents.md`（把它喂给你的 AI 助手，它就懂规矩）。
 
-> **接口版本注**：本文出现的 `host.Query()`／KimpoSQL 属查询体系 **Alice V1**（当前生产实现）。查询内核换代到
-> Alice V3.4 后改为 `Host.Alice().Query`、KimpoSQL 文本通道整体删除；**Mirror(Aria) 本身与本文红线
-> （禁裸 SQL、业务数据只走 Mirror）不变**。依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+> **接口版本注（2026-09-24 按 host/v2 AliceDataService 现状复核）**：本文出现的 `host.Query()`／
+> KimpoSQL 属已退役的查询体系 **Alice V1**，仅作历史提及。曾计划接替它的 **Alice V3.4**
+> （`Host.Alice().Query` 类型化查询）也已整体退役——`Validate`／`Explain`／`Query`／`DeriveChangeSet`／
+> `Catalog`／`SealChangeSet` 六个 RPC 已全部从 `host/v2 alice.proto` 删除。**现状**：`Host.Alice()`
+> 只暴露 `ApplyChangeSet`（写入）与 `Evaluate`（纯值求值）；跨模板/数据表查询走宿主预派发/取数等
+> 宿主侧能力，不经 `Host.Alice()`。**Mirror(Aria) 本身与本文红线（禁裸 SQL、业务数据只走 Mirror）
+> 不变**。依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ---
 

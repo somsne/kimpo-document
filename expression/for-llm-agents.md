@@ -3,17 +3,20 @@
 > 用法：把本文整体喂给你的 AI 编程助手。它是 `for-human-developers.md` 的机读版：FACTS / INTERFACE / NULL-SEMANTICS / MUST-MUST NOT / 典型序列 / 自检清单。
 > 术语：Alice=宿主查询体系（表达式编译+执行）；Aria=表单数据权威层 Mirror；模型=ExpressionModel JSON。
 
-> **适用版本：Alice V1**（当前生产实现；截至 2026-08-20 对外仍以 V1 为权威，V3.4 切换进行中）。下列 FACTS／INTERFACE 在
-> 查询内核换代到 **Alice V3.4** 后失效，届时本文需整体重写：F1/I1 `SubmitExpression` → `Host.Alice().Query`；
-> I3 一步写 → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` + `MirrorWriteFence`；F2 KimpoSQL 文本通道删除；
-> F5 ValueRef 8 类 → Canonical IR + tagged-union value（`Missing|Null|Bool|…`）；F8 `o_*`／`m_*` 列契约不再由插件解释；
-> I4/F11 `compile-preview` 旧端点更换；**N2 `SUM(全空)=0` 反转为 NULL**（V3.4 两种 `null_mode` 下均为 NULL）；
-> **N3 F7 固定族规则 → 计划内 parameter policy**。依据：内部契约 `D11e`、`R-SDK-03` §2.7／§4.3。
+> **适用版本注（2026-08-06 首版，2026-09-24 按 host/v2 AliceDataService 现状复核）**：本文 FACTS／
+> INTERFACE 描述的 **Alice V1**（`SubmitExpression` 裸文本查询）与曾计划接替它的 **Alice V3.4**
+> （`Host.Alice().Query` 类型化流式查询 + `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 写链
+> 三段式）均已整体退役——`Validate`／`Explain`／`Query`／`DeriveChangeSet`／`Catalog`／`SealChangeSet`
+> 六个 RPC 已全部从 `host/v2 alice.proto` 删除，全仓零消费方。**当前状态**：`Host.Alice()` 只暴露
+> `ApplyChangeSet`（写入，经 SDK `ApplyMutation` 门面一次性提交）与 `Evaluate`（纯值求值）两个方法；
+> 插件查询业务数据不经 `Host.Alice()`，走宿主预派发/取数等宿主侧能力。下方 FACTS/INTERFACE 条目
+> （F1/F2/I1/I3/I4/M1 等涉及查询与三段式写入的部分）均为已失效的历史设计记录，不要照此实现。
+> 依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ## FACTS（可依赖的事实）
 
 - F1 角色分工：插件提交 ExpressionModel → 宿主 Alice 编译成 SQL 并只读执行 → 行集回插件 → 插件内存加工 → 经 Aria Mirror 写回。插件全程零 SQL、零数据库连接。
-- F2 唯一通道：通用取数只走 `Host.Alice()` 的版本化强类型协议。裸文本查询通道已退役；历史内容不再查看、测试、保存或执行，必须重建为结构化表达式。
+- F2（历史设计，已失效，见文首版本注）唯一通道：通用取数只走 `Host.Alice()` 的版本化强类型协议——**现状**：取数走宿主预派发/取数等宿主侧能力，`Host.Alice()` 只做写入与纯值求值。裸文本查询通道已退役；历史内容不再查看、测试、保存或执行，必须重建为结构化表达式。
 - F3 来源表三维标记：source_type 恒 'template'（view/other 未开发即拒）；is_context bool（true=本报表上下文，运行期物化 Mirror 快照为 ctx_<alias> 临时表，按 sheet_session 隔离，含未落库脏值）；role main/detail（驱动编辑器注入 record_id 自动左关联；后端只消费不校验）。
 - F4 条件模型：where（ConditionGroup 布尔树 {logic:and|or, negate, items[]}，叶子 Predicate{left,op,right}）与 where_expr（raw 整段）互斥。CompareOp = eq|neq|lt|lte|gt|gte|like|in|not_in|is_null|is_not_null。
 - F5 ValueRef 8 类：source_field / system_var / const / func / raw / window / case / form_field。编辑器不产 form_field——本报表字段=is_context 表的 source_field（别名 bt*）。
@@ -39,14 +42,14 @@
 
 ## INTERFACE（怎么调）
 
-- I1 反向查询（插件→宿主）：`host.Alice().Query(ctx, *hostv2pb.QueryRequest) → AliceQueryStream`。请求必须携带宿主签发的 `PlanRef`/`ExecutionContextRef`/`query_grant` 与强类型 bindings；插件循环 `Recv()` 直到 `io.EOF`，提前停止时取消 context。`host.Query()` 仅是已退役空壳。
+- I1（历史设计，已失效，见文首版本注）反向查询（插件→宿主）：`host.Alice().Query(ctx, *hostv2pb.QueryRequest) → AliceQueryStream`——**现状**：`Query` RPC 与 `AliceQueryStream` 已从 SDK 删除，`Host.Alice()` 不再提供任何查询方法；查询走宿主预派发/取数等宿主侧能力。`host.Query()` 仅是已退役空壳。
 - I2 触发上下文注入（原样取用禁伪造）：query_context.sheet_session_id / write_grant / system_vars。
 - I3 写回：`host.Mirror().WriteField/WriteFields`（批量分批=一批一个屏障窗口）；行操作 AppendDetailRow/RemoveDetailRow/ReorderDetailRows；错误语义遵守 aria 契约（AppliedRevision>0=权威已写仅渲染失败，按成功处理）。
 - I4 设计态：动作配置 surface 挂共享包 @kimpo/expression-editor；校验/排障只调 POST …/expression/compile-preview（dry-run）。旧文本解析端点已退役且不再注册。
 
 ## MUST
 
-- M1 通用查询只走 `Host.Alice()` 强类型协议；填报态业务数据只以 Mirror/Aria 为权威。
+- M1（"通用查询只走 `Host.Alice()`" 已失效，见文首版本注；现状：查询走宿主预派发/取数等宿主侧能力）填报态业务数据只以 Mirror/Aria 为权威。
 - M2 新增函数同时改 funcs.DefaultRegistry + bind.functionSignatures，并补编译/绑定两层测试。
 - M3 写回空值用 raw:nil；读到 null 保持 null 加工，需要数值语义时显式 coalesce 在**表达式里**做。
 - M4 匹配键构造遵守 N5；多分量键任一空即整键无效。
@@ -64,7 +67,7 @@
 ## 典型序列（取数动作）
 
 1. 设计态：编辑器产出模型（source: 显式表 + 按需 bt* 上下文表；where 条件树；target: outputs+match_keys+clear+post_sort）→ compile-preview 校验。
-2. 运行态：动作触发 → 插件消费宿主签发的计划/上下文/grant → `Host.Alice().Query` 类型化流 → 宿主权威语义处理 → Mirror 写回（grant 白名单内）→ 完。
+2. 运行态（历史设计,已失效,见文首版本注；现状：查询走宿主预派发/取数等宿主侧能力,不经 `Host.Alice()`）：动作触发 → 插件消费宿主签发的计划/上下文/grant → `Host.Alice().Query` 类型化流 → 宿主权威语义处理 → Mirror 写回（grant 白名单内）→ 完。
 
 ## 自检清单（提交前）
 

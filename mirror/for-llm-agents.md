@@ -4,8 +4,12 @@
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"读写填报表单业务数据"的插件代码前，先满足 SELF-CHECK。
 > HUMAN VERSION: 同目录 `for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按 SDK 原样。
-> VERSION: F10／R2 中的 `Host.Query()`／KimpoSQL 属 **Alice V1**（当前生产）。Alice V3.4 替换后 →
-> `Host.Alice().Query`，KimpoSQL 文本通道删除；Mirror(Aria) 语义与红线不变。依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+> VERSION（2026-09-24 按 host/v2 AliceDataService 现状复核）：F10／R2 中的 `Host.Query()`／KimpoSQL 属
+> 已退役的 **Alice V1**，仅作历史提及。曾计划接替它的 **Alice V3.4**（`Host.Alice().Query` 类型化查询）
+> 也已整体退役——`Validate`／`Explain`／`Query`／`DeriveChangeSet`／`Catalog`／`SealChangeSet` 六个 RPC
+> 已全部从 `host/v2 alice.proto` 删除。**现状**：`Host.Alice()` 只暴露 `ApplyChangeSet`（写入）与
+> `Evaluate`（纯值求值）；跨模板/数据表查询走宿主预派发/取数等宿主侧能力，不经 `Host.Alice()`。
+> Mirror(Aria) 语义与红线不变。依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ## FACTS（事实，编号可引用）
 
@@ -18,7 +22,7 @@
 - **F7** `write_grant` 是宿主按**单次动作调用**签发的写授权令牌（call-scoped），随触发上下文 `query_context` 注入，只覆盖动作配置声明的目标表/字段。
 - **F8** 公式派生字段（computed）对插件只读：宿主在写入口按"列级 computed 登记"拒写（`computed_readonly`）。computed 的值由 editor 重算后经结算通道回写 Mirror。
 - **F9** 写成功但"渲染通知失败"= **权威已写入、会随保存落库**，仅界面未即时刷新。业务流程按成功处理。
-- **F10** 跨模板/数据表查询走 `Host.Alice()`：插件原样消费宿主签发的计划引用、执行上下文和 grant，流式接收类型化行集并在内存加工。`Host.Query()` 是已退役空壳，不提供兼容查询。插件禁止裸 SQL。
+- **F10**（历史设计，已失效，见文首版本注）跨模板/数据表查询走 `Host.Alice()`：插件原样消费宿主签发的计划引用、执行上下文和 grant，流式接收类型化行集并在内存加工——**现状**：`Host.Alice()` 不再提供查询方法，查询走宿主预派发/取数等宿主侧能力。`Host.Query()` 是已退役空壳，不提供兼容查询。插件禁止裸 SQL。
 
 ## INTERFACE（SDK `plugin.MirrorClient`，来自 kimpo-plugin-sdk/plugin/host.go）
 

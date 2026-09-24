@@ -4,9 +4,13 @@
 > USAGE: 将本文整体注入上下文（system prompt / RAG）。生成任何"涉及权限判断/权限界面/受管数据访问"的代码前，先满足 SELF-CHECK。
 > HUMAN VERSION: 同目录 `for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按现有 API 原样。
-> VERSION: 文中 `host.Query()`／`host.Record()`（含 P3 与示例代码）属 **Alice V1**（当前生产）。Alice V3.4 替换后 →
-> `Host.Alice().Query` 与 `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`；卡侬(Canon) 判定语义不变。
-> 依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+> VERSION（2026-09-24 按 host/v2 AliceDataService 现状复核）：文中 `host.Query()`／`host.Record()`
+> （含 P3 与示例代码）属已退役的 **Alice V1**，仅作历史提及。曾计划接替它的 **Alice V3.4**
+> （`Host.Alice().Query` 类型化查询 + `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 写链三段式）
+> 也已整体退役——这六个 RPC 全部从 `host/v2 alice.proto` 删除。**现状**：`Host.Alice()` 只暴露
+> `ApplyChangeSet`（写入,经 SDK `ApplyMutation`）与 `Evaluate`（纯值求值）；插件查询业务数据走
+> 宿主预派发/取数等宿主侧能力,不经 `Host.Alice()`。**卡侬(Canon) 判定语义不变**。
+> 依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ## FACTS（事实，编号可引用）
 
@@ -83,11 +87,12 @@ DELETE /api/v1/apps/{appId}/permission-grants/{id}
 
 ## TYPICAL SEQUENCES
 
-S1 动作插件（什么都不做即正确）：
+S1 动作插件（什么都不做即正确；`host.Alice().Query` 是已退役的历史示例，见文首版本注——查询现走宿主预派发/取数等宿主侧能力）：
 ```go
 // 动作被触发 ⇒ 用户已有权。直接干业务：
 host := plugin.HostFrom(ctx)
-stream, _ := host.Alice().Query(ctx, request) // 计划/上下文/grant 由宿主签发并校验
+// 历史示例：stream, _ := host.Alice().Query(ctx, request) —— Query 已从 SDK 删除，
+// 取数改走宿主预派发（动作触发上下文里的取数配置结果），不经 host.Alice()。
 host.Mirror().WriteFields(..., writeGrant)    // 动作级 grant 原样透传
 // ← 全程无任何权限代码。若出现 CheckPermission/isAllowed 之类 ⇒ 设计错误
 ```

@@ -5,9 +5,13 @@
 > HUMAN VERSION: 同目录 `timezone-for-human-developers.md`。
 > LANGUAGE: 代码注释与错误信息用中文；标识符按 SDK 原样。
 > REVISION: 2026-07-14（取数链路换算已实施；date 按 datetime 处理；v1.1 平台责任边界拍板——SQL 内成分提取与视图均为设计者责任）。
-> VERSION: F16／F5 中的旧文本 KimpoSQL 通道与 `Host.Record()` 属 **Alice V1**（当前生产）。Alice V3.4 替换后
-> KimpoSQL 通道整体删除、`Host.Record()` → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet`；时区换算语义不变。
-> 依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+> VERSION（2026-09-24 按 host/v2 AliceDataService 现状复核）：F16／F5 中的旧文本 KimpoSQL 通道与
+> `Host.Record()` 属已退役的 **Alice V1**，仅作历史提及。曾计划接替它们的 **Alice V3.4**
+> （KimpoSQL 通道删除、`Host.Record()` → `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 三段式）
+> 也已整体退役——这三个 RPC 连同 `Validate`／`Explain`／`Query`／`Catalog` 已全部从 `host/v2 alice.proto`
+> 删除。**现状**：`Host.Alice()` 只暴露 `ApplyChangeSet`（写入）与 `Evaluate`（纯值求值）；查询走宿主
+> 预派发/取数等宿主侧能力。**时区换算语义不变**。依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、
+> `R-SDK-02`（SDK 分域代际号）。
 
 ## FACTS（事实，编号可引用）
 

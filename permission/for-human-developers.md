@@ -4,9 +4,14 @@
 > 读完你会明白：卡侬(Canon)是什么、部门/用户/角色/应用角色四类主体怎么协作、一条授权是怎么算出"你能不能做"的，以及你的插件**为什么几乎什么都不用做**就已经被正确管控。
 > 配套：给大模型/AI 编程助手看的结构化版本在同目录 `for-llm-agents.md`（把它喂给你的 AI 助手，它就懂规矩）。
 
-> **接口版本注**：本文出现的 `host.Query()`／`host.Record()` 属查询体系 **Alice V1**（当前生产实现）。
-> Alice V3.4 替换后分别改为 `Host.Alice().Query` 与 `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 三段式；
-> **卡侬(Canon) 的权限判定语义（含"越权即不存在"）不变**。依据：内部契约 `D11e`、`R-SDK-03` §4.3。
+> **接口版本注（2026-09-24 按 host/v2 AliceDataService 现状复核）**：本文出现的 `host.Query()`／
+> `host.Record()` 属已退役的查询体系 **Alice V1**，仅作历史提及。曾计划接替它的 **Alice V3.4**
+> （`Host.Alice().Query` 类型化查询与 `DeriveChangeSet`／`SealChangeSet`／`ApplyChangeSet` 写链三段式）
+> 也已整体退役——这六个 RPC 全部从 `host/v2 alice.proto` 删除，全仓零消费方。**现状**：
+> `Host.Alice()` 只暴露 `ApplyChangeSet`（写入,经 SDK `ApplyMutation`）与 `Evaluate`（纯值求值）；
+> 插件查询业务数据走宿主预派发/取数等宿主侧能力,不经 `Host.Alice()`。
+> **卡侬(Canon) 的权限判定语义（含"越权即不存在"）不变**。
+> 依据：Kimpo 主仓台账 I-988（SDK wire 面瘦身）、`R-SDK-02`（SDK 分域代际号）。
 
 ---
 
@@ -103,7 +108,7 @@ identities(用户) = { 本人 }
 |---|---|
 | 动作被触发（如取数、写值） | 触发它的用户已经过了操作闸门——你的动作能被调起，本身就说明有权 |
 | 经 `host.Mirror()` 读会话数据 | 会话建立时已按 FormMode 预检过（新增需 create 权、打开历史需 view 权），Mirror 里就是这个用户可见宇宙内的数据 |
-| 经 `host.Alice().Query` 反向查询 | 宿主校验签发的计划/上下文/grant 并套用查询者权限（模板可用性校验） |
+| 经宿主预派发/取数等宿主侧能力查询（历史文档写作 `host.Alice().Query`，该 RPC 已退役，见文首版本注） | 宿主校验签发的计划/上下文/grant 并套用查询者权限（模板可用性校验） |
 | 经 `host.Record()` 写记录 | 记录级闸门（modify/delete + 行级范围）在宿主写入口校验，越权记录对你表现为"不存在" |
 | 写数据带 `write_grant` | 那是动作级写授权（哪个动作能写哪张表），与用户级权限双层叠加，你只管原样透传 |
 
